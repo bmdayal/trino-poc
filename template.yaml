@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Low-cost POC for Trino on EKS
+
+Parameters:
+  EksClusterName:
+    Type: String
+    Default: trino-poc-cluster
+  S3BucketName:
+    Type: String
+    Default: my-trino-poc-bucket-${AWS::AccountId}
+
+Resources:
+  # IAM Role for Trino (free)
+  TrinoS3AccessRole:
+    Type: AWS::IAM::Role
+    Properties: {/* Same as before */}
+
+  # EKS Cluster (using free tier t3.small nodes)
+  EksCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref EksClusterName
+      RoleArn: !GetAtt EksClusterRole.Arn
+      Version: '1.27'  # Free tier eligible version
+      ResourcesVpcConfig:
+        SubnetIds: !Ref SubnetIds
+        SecurityGroupIds: !Ref SecurityGroupIds
+
+  EksNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodegroupName: !Sub ${EksClusterName}-nodegroup
+      Subnets: !Ref SubnetIds
+      NodeRole: !GetAtt EksNodeRole.Arn
+      ScalingConfig:
+        MinSize: 1    # Single node to minimize cost
+        MaxSize: 2
+        DesiredSize: 1
+      InstanceTypes: ["t3.small"]  # Free tier eligible
+      DiskSize: 20
+
+  # Lambda Function (stays within free tier)
+  TrinoQueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Timeout: 15     # Reduced timeout
+      MemorySize: 256 # Minimum for decent performance
+      Environment: {/* Same as before */}
+      Policies: {/* Same as before */}
+      VpcConfig: {/* Same as before */}
+
+  # API Gateway (free tier eligible)
+  TrinoApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionUri: api-definition.yaml

@@ -1,0 +1,42 @@
+# version: '3.7'
+
+# services:
+#   trino-coordinator:
+#     image: trinodb/trino:latest
+#     container_name: trino-coordinator
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - ./etc/catalog:/etc/trino/catalog
+#       - ./aws-config:/root/.aws:ro
+#     environment:
+#       - AWS_REGION=us-east-1
+#       - AWS_ACCESS_KEY_ID=AKIAY5CHLT4AXWJLGR5T
+#       - AWS_SECRET_ACCESS_KEY=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
+#     networks:
+#       - trino-network
+
+# networks:
+#   trino-network:
+#     driver: bridge
+
+version: '3.7'
+
+services:
+  trino-coordinator:
+    image: trinodb/trino:423  # Using stable version
+    container_name: trino-coordinator
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./etc/catalog:/etc/trino/catalog
+    environment:
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=AKIAY5CHLT4AXWJLGR5T
+      - AWS_SECRET_ACCESS_KEY=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
+    networks:
+      - trino-network
+
+networks:
+  trino-network:
+    driver: bridge
